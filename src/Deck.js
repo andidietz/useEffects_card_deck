@@ -1,11 +1,10 @@
 import React, {useState, useEffect} from 'react'
 import axios from 'axios'
 import Card from './Card'
-import Button from './Button'
+
+const API_BASE_URL = "http://deckofcardsapi.com/api/deck"
 
 const Deck = () => {
-  const API_BASE_URL = "http://deckofcardsapi.com/api/deck"
-
   const [deck, setDeck] = useState('')
   const [cards, setCards] = useState([])
   const [endOfDeck, setEndOfDeck] = useState(false)
@@ -13,59 +12,51 @@ const Deck = () => {
   useEffect(() => {
     async function fetchAndSetDeck() {
       const deckResult = await axios.get(`${API_BASE_URL}/new/shuffle/`)
-      console.log(deckResult.data)
       setDeck(deckResult.data)
-      console.log('deck', deck)
-
     }
     fetchAndSetDeck()
-  }, [setDeck]) 
+  }, []) 
 
-  useEffect(() => {
-    async function getCard() {
-      let {deck_id} = deck
-      
-      try {
-        let drawResults = await axios.get(`${API_BASE_URL}/${deck_id}/draw/?count=1`)
-        
-        const {remaining, cards} = drawResults.data
 
-        if (remaining === 0) {
-          setEndOfDeck(true)
-          throw new Error("End of Deck")
-        }
+  async function getCard() {
+    let {deck_id: deckId} = deck
+    
+    try {
+      let drawResults = await axios.get(`${API_BASE_URL}/${deckId}/draw/?count=1`)
+      const {remaining, cards} = drawResults.data
 
-        const {code, value, suit} = cards[0]
-
-        setCards(data => [
-          ...data,
-          {
-            id: code,
-            name: `${value} of ${suit}`
-          }
-        ])
-      } catch(error) {
-        alert(error)
+      if (remaining === 0) {
+        setEndOfDeck(true)
+        throw new Error("End of Deck")
       }
+
+      const {code, value, suit} = cards[0]
+
+      setCards(data => [
+        {
+          id: code,
+          name: `${value} of ${suit}`
+        }
+      ])
+    } catch(error) {
+      alert(error)
     }
-    getCard()
-  }, [setCards])
+  }
 
   const handleClick = () => {
-    setCards()
+    getCard()
   }
   
   const cardComponents =  
-    cards.map(({id, name}) => (<Card id={id} name={name}/>))
+    cards.map(({id, name}) => (<Card id={id} name={name} key={id}/>))
   
   return (
     <>
       {!endOfDeck ? 
-        <Button onClick={handleClick} label='Draw Card' /> : null}
+        <button onClick={handleClick}>Draw Card</button> : null}
       <div>{cardComponents}</div>
     </>
   )
 }
-
 
 export default Deck

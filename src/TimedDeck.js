@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react'
 import axios from 'axios'
 import Card from './Card'
-import Button from './Button'
 
 const Deck = () => {
   const BASE_URL = 'http://deckofcardsapi.com/api/deck'
@@ -17,7 +16,7 @@ const Deck = () => {
       setDeck(deckResult.data)
     }
     fetchAndSetDeck()
-  }, [setDeck])
+  }, [])
 
   useEffect(() => {
     async function getCard() {
@@ -25,17 +24,15 @@ const Deck = () => {
       
       try {
         let drawResults = await axios.get(`${BASE_URL}/${deckId}/draw/?count=1`)
-        
-        const {remaining, cards} = drawResults.data
+        const {remaining} = drawResults.data
 
         if (remaining === 0) {
           setTimedDraw(true)
           throw new Error("End of Deck")
         }
         
-        const {code, value, suit} = cards[0]
+        const {code, value, suit} = drawResults.data.cards[0]
         setCards(data => [
-          ...data,
           {
             id: code,
             name: `${value} of ${suit}`
@@ -44,31 +41,30 @@ const Deck = () => {
       } catch(error) {
         alert(error)
       }
-  }
+    }
 
-  if (!setTimedDraw && !timerId.current) {
-    timerId.current = setInterval(async () => {
-      await getCard()
-    }, 1000)
-  }
+    if (timedDraw && !timerId.current) {
+      timerId.current = setInterval(async () => {
+        await getCard()
+      }, 1000)
+    }
 
     return () => {
       clearInterval(timerId.current)
       timerId.current = null
     }
-  }, [deck, timedDraw, setTimedDraw])
-
+  }, [timedDraw])
 
   const toggleTimedDraw = () => {
     setTimedDraw(timedDraw => !timedDraw)
   }
     
   const cardComponents =  
-    cards.map(({id, name}) => (<Card id={id} name={name}/>))
+    cards.map(({id, name}) => (<Card id={id} key={id} name={name}/>))
   
-    return (
+  return (
     <>
-      <Button onClick={toggleTimedDraw} label={timedDraw ? 'Stop' : 'Start'} />
+      <button onClick={toggleTimedDraw}>{timedDraw ? 'Stop' : 'Start'}</button>
       <div>{cardComponents}</div>
     </>
   )
